@@ -1,0 +1,59 @@
+# Show IO by pid
+# Compile:
+# stap -DSTP_NO_OVERLOAD io.stp -p4 -m io
+# Run:
+# staprun io.ko -x <pid> refresh=<integer>
+# @ton31337
+
+global io;
+global MIN_IO=8192;
+global refresh=5;
+global refresh_count=0;
+
+function header()
+{
+  ansi_clear_screen();
+  printf("Probing...Type CTRL+C to stop probing.\n");
+  printf("D\tSIZE\tCOUNT\tPATH\n");
+}
+
+probe begin { header(); }
+probe kernel.function("vfs_read"), kernel.function("vfs_write")
+{
+  dentry = reverse_path_walk($file->f_path->dentry);
+  op = 1;
+  if(ppfunc() == "vfs_write")
+    op = 2;
+
+  if((dentry != "") &&
+      pid() == target()) {
+
+      io[$file, op] += $count;
+  }
+}
+
+probe timer.s(1)
+{
+  if(refresh_count++ % refresh) next
+  header();
+  foreach([file, direct] in io- limit 10) {
+    try {
+      count_t = @cast(file, "file")->f_count->counter;
+      path_t = reverse_path_walk(@cast(file, "file")->f_path->dentry);
+      mnt_t = reverse_path_walk(@cast(file, "file")->f_path->mnt->mnt_root);
+      if(mnt_t == "/")
+        mnt_t = " "
+      else
+        mnt_t = "/" . mnt_t;
+      if(path_t != "" && (io[file,direct] > MIN_IO))
+        printf("%d\t%d\t%d\t%s/%s\n", direct, io[file,direct], count_t, mnt_t, path_t);
+    } catch(err) {}
+  }
+}
+
+probe end
+{
+  printf("Hope you are doing well ;-)\n");
+  delete refresh_count;
+  delete io;
+}

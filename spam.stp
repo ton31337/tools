@@ -1,0 +1,24 @@
+# found the spammer if using not mail() function (e.g. php mail())
+# stap spam.stp
+# @ton31337
+
+global _count;
+
+probe begin { printf("UID\tCOUNT\n"); }
+
+probe kernel.function("sys_sendto")
+{
+  try {
+          buf = kernel_string($buff);
+          if(isinstr(buf, "MAIL FROM:") > 0) 
+                  _count[uid()]++;
+  } catch(err) {}
+}
+
+probe timer.s(3)
+{
+  foreach(uid in _count- limit 5)
+          printf("%d\t%d\n", uid, _count[uid]);
+}
+
+probe timer.s(30) { delete _count; }

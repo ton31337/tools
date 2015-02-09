@@ -1,0 +1,18 @@
+# unlinkat(AT_FDCWD, "/home/u590669019/public_html/includes", AT_REMOVEDIR) = -1 EBUSY (Device or resource busy)
+# stap ok.stp /home/u590669019/public_html/includes
+# [27596]<-php-cgi
+# [28167]<-php-cgi
+# @ton31337
+
+probe kernel.function("vfs_read"),kernel.function("vfs_write")
+{
+  mnt = reverse_path_walk($file->f_path->mnt->mnt_mountpoint);
+  dentry = reverse_path_walk($file->f_path->dentry);
+  mnt_t = "/" . mnt;
+  if(mnt == "/")
+          mnt_t = " "
+
+  path = mnt_t . "/" . dentry;
+  if(path == @1)
+          printf("[%d] <- %s\n", pid(), execname());
+}

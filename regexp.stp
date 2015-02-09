@@ -1,0 +1,71 @@
+# Regular Expression performance measuring tool
+# Compile:
+# stap -DSTP_NO_OVERLOAD regexp.stp -p4 -m pattern_performance
+# Run:
+# staprun pattern_performance.ko metric=<time|pattern> refresh=<integer>
+# @ton31337
+
+global metric="pattern"
+global refresh=5
+global refresh_count=0
+global begin
+global most_pattern
+global most_time
+
+probe begin { print_head(); }
+probe process("/usr/local/openresty/nginx/sbin/nginx").function("msc_regexec_capture")
+{
+  begin = gettimeofday_us();
+  most_pattern[user_string($regex->pattern)]++;
+}
+
+probe process("/usr/local/openresty/nginx/sbin/nginx").function("msc_regexec_capture").return
+{
+  elapsed = gettimeofday_us() - begin;
+  most_time[user_string($regex->pattern),$slen] = elapsed;
+}
+
+function print_head()
+{
+  ansi_clear_screen();
+  printf("Probing...Type CTRL+C to stop probing.\n");
+  if(metric == "pattern") {
+    printf("Count\t\tRegex\n");
+  } else {
+    printf("Time(us)\t\tRegex (data length)\n");
+  }
+}
+
+function by_pattern()
+{
+  foreach(pattern in most_pattern- limit 10) {
+    printf("%d\t\t%s\n", most_pattern[pattern], pattern);
+  }
+}
+
+function by_time()
+{
+  foreach([pattern,len] in most_time- limit 10) {
+    printf("%d\t\t\t%s (%d)\n", most_time[pattern,len], pattern, len);
+  }
+}
+
+probe timer.s(1)
+{
+  if(refresh_count++ % refresh) next
+  print_head();
+  if(metric == "pattern") {
+    by_pattern();
+  } else {
+    by_time();
+  }
+}
+
+probe end
+{
+  printf("Hope you are doing well ;-)\n");
+  delete most_time;
+  delete most_pattern;
+  delete begin;
+  delete refresh_count;
+}
