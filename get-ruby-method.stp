@@ -1,18 +1,19 @@
 # @ton31337
 global count;
-global pids;
 
-probe process("/opt/rbenv/versions/2.2.0/bin/ruby").function("rb_call0").return
+probe process("/opt/rbenv/versions/2.2.0/bin/ruby").function("rb_call0").return,
+      process("/opt/rbenv/versions/2.2.0/bin/ruby").function("rb_add_method").return
 {
-        count[$mid]++;
-        pids[$mid] = pid();
+        count[$mid,pid()]++;
 }
 
 probe timer.s(5)
 {
         ansi_clear_screen();
-        foreach(mid in count- limit 2) {
-                system(sprintf("gdb -p %d --batch -ex 'call rb_id2name(%d)' | awk '{ if($0 ~ /^\$/) print $4; }'",
-                          pids[mid], mid))
+        foreach([mid,pid] in count- limit 1) {
+                printf("mid: %d, pid: %d, count: %d\n", mid, pid, count[mid,pid]);
+                system(sprintf("gdb -p %d --batch -ex 'call rb_id2name(%d)' 2>/dev/null | awk '{ if($0 ~ / = /) { print $4; } }'",
+                          pid, mid))
         }
+        delete count;
 }
