@@ -1,0 +1,42 @@
+# get the number of how much times was tcp_cwnd_restart called
+# get real-time stats for cwnd
+# use sysctl -w net.ipv4.tcp_slow_start_after_idle=0 (default 1)
+# @ton31337
+
+%{
+#include <net/tcp.h>
+%}
+
+global count;
+global etime;
+
+function get_cwnd:long(sk:long)
+%{
+  struct tcp_sock *tp = tcp_sk((struct sock *)STAP_ARG_sk);
+  u32 cwnd = tp->snd_cwnd;
+  THIS->__retvalue = cwnd;
+%}
+
+probe begin
+{
+  etime = gettimeofday_s();
+}
+
+probe kernel.function("tcp_cwnd_restart")
+{
+  count++;
+  printf("congestion window size: %d\n", get_cwnd($sk));
+}
+
+probe timer.s(2)
+{
+  ansi_clear_screen();
+}
+
+probe end
+{
+  etime = gettimeofday_s() - etime;
+  printf("\ntcp_cwnd_restart called %d times in %d seconds.\n", count, etime);
+  delete count;
+  delete etime;
+}
