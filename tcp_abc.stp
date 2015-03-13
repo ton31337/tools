@@ -1,0 +1,22 @@
+# http://lxr.free-electrons.com/source/net/ipv4/tcp_input.c#L803
+# sysctl net.ipv4.tcp_abc (0|1|2)
+# stap -g iw.stp
+# @ton31337
+
+%{
+#include <net/tcp.h>
+%}
+
+function get_cwnd:long(dst:long)
+%{
+  __u32 cwnd = ((struct dst_entry *)STAP_ARG_dst ?
+                  dst_metric((struct dst_entry *)STAP_ARG_dst, RTAX_INITCWND) : 0);
+  if(!cwnd)
+          cwnd = TCP_INIT_CWND;
+  THIS->__retvalue = cwnd;
+%}
+
+probe kernel.function("tcp_init_cwnd").return
+{
+  printf("%d\n", get_cwnd($dst));
+}
