@@ -4,7 +4,7 @@ require 'socket'
 require 'json'
 
 stats = {}
-s_stats = []
+s_stats = {}
 total = 0
 
 exit! if ARGV[0].nil?
@@ -14,6 +14,7 @@ while stream = conn.gets
   stats = JSON.parse(stream)
 end
 
+# Collect stats
 stats.map { |x|
   x.map { |cluster|
     if cluster.instance_of? Hash
@@ -21,8 +22,7 @@ stats.map { |x|
         cluster.map { |s_key,s_val|
           if s_val.instance_of? Hash
             num_of_times_server_was_ejected = ((s_val['server_err'] + s_val['server_timedout'] + s_val['server_eof']) / ARGV[0].to_i)
-            print "Server: #{s_key} was ejected #{num_of_times_server_was_ejected} times.\n"
-            s_stats << num_of_times_server_was_ejected
+            s_stats.merge!(s_key => num_of_times_server_was_ejected)
           end
         }
       end
@@ -30,5 +30,10 @@ stats.map { |x|
   }
 }
 
-s_stats.map { |x| total += x }
+# Print stats
+max_size = s_stats.max_by { |k,v| v }.last
+s_stats.map { |srv,count|
+  print "#{srv} ejected--> #{count} times (#{(100 * count) / max_size}%)\n"
+  total += count
+}
 print "Total ejection count: #{total}\n"
