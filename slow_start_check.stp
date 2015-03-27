@@ -28,6 +28,11 @@ probe kernel.function("tcp_cwnd_restart")
   printf("congestion window size: %d\n", get_cwnd($sk));
 }
 
+probe kernel.function("tcp_ack").return
+{
+  printf("Window size prior recovery: %d\n", $prior_cwnd);
+}
+
 probe timer.s(2)
 {
   ansi_clear_screen();
