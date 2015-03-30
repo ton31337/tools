@@ -33,7 +33,7 @@ stats.map { |x|
 }
 
 # Print stats
-max_size = s_stats.max_by { |k,v| v }.last
+max_size = 1 if s_stats.max_by { |k,v| v }.last == 0
 s_stats.map { |srv,count|
   print "#{srv.split('.').first} E=#{count} (#{(100 * count) / max_size}%), ReqS=#{req_stats[srv]}\n"
   total += count
