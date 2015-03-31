@@ -7,6 +7,7 @@ stats = {}
 s_stats = {}
 req_stats = {}
 res_stats = {}
+cur_conn = 0
 total = 0
 
 exit! if ARGV[0].nil?
@@ -21,6 +22,7 @@ stats.map { |x|
   x.map { |cluster|
     if cluster.instance_of? Hash
       if cluster['client_connections'].to_i > 0
+        cur_conn = cluster['client_connections'].to_i
         cluster.map { |s_key,s_val|
           if s_val.instance_of? Hash
             num_of_times_server_was_ejected = ((s_val['server_err'] + s_val['server_timedout'] + s_val['server_eof']) / ARGV[0].to_i)
@@ -41,3 +43,4 @@ s_stats.map { |srv,count|
   total += count
 }
 print "Total ejection count: #{total}\n"
+print "Total current connections: #{cur_conn}\n"
