@@ -1,0 +1,27 @@
+# twemproxy keeps persistent connections after restart
+# socket_count = (server_connections * number_of_backend_servers)
+# need to check how much time (ms) takes connect() when timeouts
+
+global count;
+
+probe syscall.connect
+{
+        port = _struct_sockaddr_u_tcp_port($uservaddr, $addrlen);
+        ip = _struct_sockaddr_u_ip_addr($uservaddr, $addrlen);
+        if(port == "1101") {
+                count[ip] = gettimeofday_ms();
+        }
+}
+
+probe syscall.connect.return
+{
+        ip = _struct_sockaddr_u_ip_addr($uservaddr, $addrlen);
+        if(count[ip]) {
+                delta = gettimeofday_ms() - count[ip];
+                if(delta)
+                        printf("%s: %dms\n", ip, delta);
+        }
+}
+
+probe timer.s(60) { delete count; }
+probe end { delete count; }
