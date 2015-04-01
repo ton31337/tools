@@ -1,0 +1,24 @@
+# twemproxy keeps persistent connections after restart
+# socket_count = (server_connections * number_of_backend_servers)
+# need to check how much time (ms) takes connect() when timeouts
+
+global count;
+
+probe process("/usr/local/bin/nutcracker").function("server_connect")
+{
+        _sname = user_string($server->name->data);
+        count[_sname] = gettimeofday_ms();
+}
+
+probe process("/usr/local/bin/nutcracker").function("server_connect").return
+{
+        _sname = user_string($server->name->data);
+        if(count[_sname]) {
+                delta = gettimeofday_ms() - count[_sname];
+                if(delta > 1)
+                        printf("%s [ delta=%d, return=%d ]\n", _sname, delta, $return);
+        }
+}
+
+probe timer.s(60) { delete count; }
+probe end { delete count; }
