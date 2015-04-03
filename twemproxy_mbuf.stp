@@ -1,0 +1,28 @@
+global mbuf_size;
+global mbuf_free;
+
+function print_head()
+{
+        ansi_clear_screen();
+        printf("Probing...Type CTRL+C to stop probing.\n");
+}
+
+probe process("/usr/local/bin/nutcracker").function("mbuf_length").return { mbuf_size[$return]++; } # Return the length of data in mbuf.
+probe process("/usr/local/bin/nutcracker").function("mbuf_size").return { mbuf_free[$return]++; } # Return the remaining space size for any new data in mbuf.
+
+probe timer.s(1)
+{
+        print_head();
+        printf("Mbuf_size\tCount\n");
+        foreach(m in mbuf_size- limit 8) {
+                printf("%d\t\t%d\n", m, mbuf_size[m]);
+        }
+
+        printf("\nMbuf_free\tCount\n");
+        foreach(m in mbuf_free- limit 8) {
+                printf("%d\t\t%d\n", m, mbuf_free[m]);
+        }
+
+        delete mbuf_size;
+        delete mbuf_free;
+}
