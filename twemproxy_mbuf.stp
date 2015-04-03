@@ -2,7 +2,8 @@
 # @ton31337
 
 global mbuf_size;
-global mbuf_max;
+global INC_NUM;
+global RANGE_BY;
 
 function print_head()
 {
@@ -10,25 +11,30 @@ function print_head()
         printf("Probing...Type CTRL+C to stop probing.\n");
 }
 
-# Return the length of data in mbuf.
-probe process("/usr/local/bin/nutcracker").function("mbuf_length").return
+probe begin
 {
-        mbuf_size[$return]++;
+        RANGE_BY = 1024;
+        INC_NUM = RANGE_BY - 1;
 }
 
-# Return the remaining space size for any new data in mbuf.
-probe process("/usr/local/bin/nutcracker").function("mbuf_size").return
+probe process("/usr/local/bin/nutcracker").function("mbuf_length").return
 {
-        mbuf_max = ($return > mbuf_max) ? $return : mbuf_max;
+        j = 0;
+        for(i = 1; i <= 16; i++) {
+                if(($return > j) && ($return < j+INC_NUM))
+                        mbuf_size[i]++;
+                j += RANGE_BY;
+        }
 }
 
 probe timer.s(1)
 {
         print_head();
-        printf("Mbuf_size\tMbuf_free\tCount\n");
-        foreach(m in mbuf_size- limit 8) {
-                printf("%d\t\t%d\t\t%d\n", m, (mbuf_max - m), mbuf_size[m]);
+        printf("Mbuf_range\tCount\n");
+        j = 0;
+        for(i = 1; i <= 16; i++) {
+                printf("%5d-%d\t%d\n", j, j+INC_NUM, mbuf_size[i]);
+                j += RANGE_BY;
         }
-
         delete mbuf_size;
 }
