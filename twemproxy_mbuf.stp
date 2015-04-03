@@ -1,4 +1,7 @@
 # show mbuf usage
+# Using twemproxy's default mbuf size of 16Kbytes, we waste lot of memory.
+# We allocate always mbuf with 16Kbytes, but we use only let's say 2KBytes, rest of memory is wasted.
+# If we change this to 512bytes, we save kernel's memory, we have higher connection rate, but we suffer more read/write()
 # @ton31337
 
 global mbuf_size;
