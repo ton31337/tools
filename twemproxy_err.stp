@@ -1,0 +1,24 @@
+# by default these are ignored and not collected
+# case EPIPE:
+# case ECONNRESET:
+# case ECONNABORTED:
+# case ECONNREFUSED:
+# case ENOTCONN:
+# case ENETDOWN:
+# case ENETUNREACH:
+# case EHOSTDOWN:
+# case EHOSTUNREACH:
+# @ton31337
+
+probe begin
+{
+        ansi_clear_screen();
+        printf("Server\t\tErr_count\n");
+}
+
+probe process("/usr/local/bin/nutcracker").function("server_close")
+{
+        server_name = user_string(@cast($conn->owner, "server")->name->data);
+        if($conn->err)
+                printf("%s\t%s\n", server_name, errno_str($conn->err));
+}
