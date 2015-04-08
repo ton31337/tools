@@ -1,5 +1,6 @@
 # by default these are ignored and not collected
 # case EPIPE:
+# case EINVAL:
 # case ECONNRESET:
 # case ECONNABORTED:
 # case ECONNREFUSED:
@@ -13,12 +14,15 @@
 probe begin
 {
         ansi_clear_screen();
-        printf("Server\t\tErr_count\n");
+        printf("Date\t\t\t\tServer\t\t\t\tError\n");
 }
 
 probe process("/usr/local/bin/nutcracker").function("server_close")
 {
         server_name = user_string(@cast($conn->owner, "server")->name->data);
         if($conn->err)
-                printf("%s\t%s\n", server_name, errno_str($conn->err));
+                printf("%s\t%s\t%s\n",
+                        ctime(gettimeofday_s()),
+                        server_name,
+                        errno_str($conn->err));
 }
