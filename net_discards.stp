@@ -4,7 +4,7 @@
 probe begin
 {
         ansi_clear_screen();
-        printf("Symbol name\n");
+        printf("Date\t\t\t\tSymbol name\n");
 }
 
 probe kernel.trace("kfree_skb")
@@ -12,7 +12,7 @@ probe kernel.trace("kfree_skb")
         try {
                 ifindex = $skb->dev->ifindex;
                 if(ifindex == strtol(@1, 10)) {
-                        printf("%s\n", symdata($location));
+                        printf("%s\t%s\n", ctime(gettimeofday_s()), symdata($location));
                 }
         } catch {}
 }
