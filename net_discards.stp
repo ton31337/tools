@@ -1,0 +1,18 @@
+# show function which generates kfree_skb at interfae with ifindex
+# @ton31337
+
+probe begin
+{
+        ansi_clear_screen();
+        printf("Symbol name\n");
+}
+
+probe kernel.trace("kfree_skb")
+{
+        try {
+                ifindex = $skb->dev->ifindex;
+                if(ifindex == strtol(@1, 10)) {
+                        printf("%s\n", symdata($location));
+                }
+        } catch {}
+}
