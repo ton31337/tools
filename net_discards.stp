@@ -1,20 +1,21 @@
-# show function which generates kfree_skb at interfae with ifindex
-# ip addr (to get ifindex)
-# stap --all-modules net_discards.stp <ifindex>
+# try to find the reason of rx_discards
+# stap --all-modules net_discards.stp probe_eth=eth1
 # @ton31337
 
-probe begin
-{
-        ansi_clear_screen();
-        printf("Date\t\t\t\tSymbol name\n");
-}
+global locations;
+global probe_eth="eth0";
 
-probe kernel.trace("kfree_skb")
+probe kernel.trace("kfree_skb") { locations[$location] <<< 1; }
+probe timer.s(3)
 {
-        try {
-                ifindex = $skb->dev->ifindex;
-                if(ifindex == strtol(@1, 10)) {
-                        printf("%s\t%s\n", ctime(gettimeofday_s()), symdata($location));
-                }
-        } catch {}
+        system(sprintf("ethtool -S %s | grep rx_discard | awk '{print \"Discarded packets: \"$2}'", probe_eth));
+        printf("=========== BEGIN ================\n");
+        foreach(l in locations-) {
+                printf("%s %d packets dropped at %s\n",
+                        ctime(gettimeofday_s()), @count(locations[l]), symname(l));
+
+        }
+        printf("=========== END == ================\n");
+
+        delete locations;
 }
