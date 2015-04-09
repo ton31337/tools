@@ -1,4 +1,6 @@
 # show function which generates kfree_skb at interfae with ifindex
+# ip addr (to get ifindex)
+# stap --all-modules net_discards.stp <ifindex>
 # @ton31337
 
 probe begin
