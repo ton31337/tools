@@ -20,9 +20,12 @@ probe begin
 probe process("/usr/local/bin/nutcracker").function("server_close")
 {
         server_name = user_string(@cast($conn->owner, "server")->name->data);
+        strerr = errno_str($conn->err);
         if($conn->err)
-                printf("%s\t%s\t%s\n",
+                printf("%s\t%s\t%s (r:%d s:%d)\n",
                         ctime(gettimeofday_s()),
                         server_name,
-                        errno_str($conn->err));
+                        strerr,
+                        $conn->recv_bytes,
+                        $conn->send_bytes);
 }
