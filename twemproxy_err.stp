@@ -14,7 +14,7 @@
 probe begin
 {
         ansi_clear_screen();
-        printf("Date\t\t\t\tServer\t\t\t\tError\n");
+        printf("Date\t\t\t\tServer(connection_id)\t\t\tError\n");
 }
 
 probe process("/usr/local/bin/nutcracker").function("server_close")
@@ -22,9 +22,10 @@ probe process("/usr/local/bin/nutcracker").function("server_close")
         server_name = user_string(@cast($conn->owner, "server")->name->data);
         strerr = errno_str($conn->err);
         if($conn->err)
-                printf("%s\t%s\t%s (r:%d s:%d)\n",
+                printf("%s\t%s(%d)\t%s (r:%d s:%d)\n",
                         ctime(gettimeofday_s()),
                         server_name,
+                        $conn,
                         strerr,
                         $conn->recv_bytes,
                         $conn->send_bytes);
