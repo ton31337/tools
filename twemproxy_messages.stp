@@ -2,12 +2,14 @@
 # @ton31337
 probe process("/usr/local/bin/nutcracker").function("msg_recv_chain")
 {
-        if($msg->vlen) 
+        if($msg->vlen) {
                 server_name = user_string(@cast($conn->owner, "server")->name->data);
-                printf("%s %s vlen:%d, mlen:%d\n",
+                printf("%s %s(%d) vlen:%d, mlen:%d\n",
                                                 ctime(gettimeofday_s()),
                                                 server_name,
+                                                $conn,
                                                 $msg->vlen,
                                                 $msg->mlen
                                                 );
+        }
 }
