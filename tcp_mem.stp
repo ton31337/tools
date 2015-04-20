@@ -1,0 +1,38 @@
+# show receive/send buffers (rmem, wmem)
+# sysctl net.ipv4.tcp_rmem
+# sysctl net.ipv4.tcp_wmem
+# @ton31337
+
+global _rcv;
+global _snd;
+
+function print_head()
+{
+        ansi_clear_screen();
+        println("Probing...Type CTRL+C to stop probing.");
+        println("Buffer size\t\tCount\n");
+}
+
+probe begin { print_head(); }
+probe kernel.function("tcp_v4_do_rcv")
+{
+        _rcv[$sk->sk_rcvbuf]++;
+        _snd[$sk->sk_sndbuf]++;
+}
+
+probe timer.s(2)
+{
+        print_head();
+        println("# READ");
+        foreach(buf in _rcv- limit 10) {
+                printf("%d\t\t\t%d\n", buf, _rcv[buf]);
+        }
+
+        println("\n# WRITE");
+        foreach(buf in _snd- limit 10) {
+                printf("%d\t\t\t%d\n", buf, _snd[buf]);
+        }
+
+        delete _rcv;
+        delete _snd;
+}
