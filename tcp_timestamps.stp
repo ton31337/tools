@@ -1,0 +1,17 @@
+# PoC how disabling tcp timestamps we can save 12 bytes for every packet
+# net.ipv4.tcp_timestamps=0
+# @ton31337
+
+global __tcp_header;
+
+probe kernel.function("tcp_v4_do_rcv")
+{
+        __tcp_header <<< $skb->len;
+}
+
+probe timer.s(1)
+{
+        ansi_clear_screen();
+        println("TCP Header length");
+        print(@hist_linear(__tcp_header, 20, 34, 2));
+}
