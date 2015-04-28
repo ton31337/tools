@@ -6,7 +6,7 @@ global __tcp_header;
 
 probe kernel.function("tcp_v4_do_rcv")
 {
-        __tcp_header <<< $skb->len;
+        __tcp_header <<< ($skb->len - $skb->data_len);
 }
 
 probe timer.s(1)
