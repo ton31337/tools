@@ -1,0 +1,22 @@
+# ethtool -S eth0 | grep rx_disca
+# stap -d tg3 rx_discards.stp -m discards -p4 -g
+# @ton31337
+
+%{
+#include <linux/netdevice.h>
+%}
+
+probe begin
+{
+        ansi_clear_screen();
+        printf("Probing...Type CTRL+C to stop probing.\n");
+}
+
+probe kernel.function("netif_receive_skb").return,
+      kernel.function("netif_rx").return
+{
+        if ($return == %{ NET_RX_DROP %}) {
+                printf("#### %s ####\n", ctime(gettimeofday_s()));
+                print_backtrace();
+        }
+}
