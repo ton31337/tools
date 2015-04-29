@@ -1,0 +1,32 @@
+# show how entropy is used in linux..
+# @ton31337
+
+global counter;
+
+function print_head()
+{
+        ansi_clear_screen();
+        counter = 0;
+        println("Probing...Type CTRL+C to stop probing.");
+}
+
+probe begin { print_head(); }
+
+probe kernel.function("extract_entropy").return
+{
+        if (counter++ > 30) {
+                print_head();
+        }
+
+        delta_time = gettimeofday_us() - @entry(gettimeofday_us());
+        pool_name = kernel_string(@cast($r, "entropy_store")->name);
+        entropy_counter = $r->entropy_count;
+
+        printf("%s  %25s (%d) %8d %8d\t%s\n",
+                        ctime(gettimeofday_s()),
+                        execname(),
+                        tid(),
+                        delta_time,
+                        entropy_counter,
+                        pool_name);
+}
