@@ -1,0 +1,15 @@
+# drivers/net/tg3.c:6830:
+#  drop_it_no_recycle:
+#  /* Other statistics kept track of by card. */
+#  tp->rx_dropped++;
+#  goto next_pkt;
+#  }
+# @ton31337
+# see who generates drops at tg3 driver
+
+probe module("tg3").statement("tg3_rx@drivers/net/tg3.c:6830")
+{
+        printf("#### %s ####", ctime(gettimeofday_s()));
+        printf("rx_dropped: %d\n", $tp->rx_dropped);
+        print_backtrace();
+}
