@@ -1,0 +1,18 @@
+# @ton31337
+# This counter 'dropped' should not be used with device driver. Do not confuse with rx_dropped
+# in sk_buff. This is struct softnet_stat. 
+# cat /proc/net/softnet_stat (2nd column - netdev_max_backlog drops)
+
+probe begin
+{
+        ansi_clear_screen();
+        printf("Probing...Type CTRL+C to stop probing.\n");
+}
+
+# dev.c:2997
+# __get_cpu_var(netdev_rx_stat).dropped++;
+probe kernel.statement("enqueue_to_backlog@net/core/dev.c:2997")
+{
+        printf("#### %s (%s) ####\n", ctime(gettimeofday_s()), ppfunc());
+        print_backtrace();
+}
