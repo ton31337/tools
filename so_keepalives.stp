@@ -1,0 +1,34 @@
+# show sockets using SO_KEEPALIVE option
+# @ton31337
+
+%{
+#include <asm-generic/socket.h>
+%}
+
+global fds;
+
+probe begin,timer.s(30)
+{
+        delete fds;
+        ansi_clear_screen();
+}
+
+probe kernel.function("sys_connect")
+{
+        fds[pid(), $fd, "host"] = $uservaddr;
+        fds[pid(), $fd, "len"] = $addrlen;
+}
+
+probe kernel.function("sys_setsockopt").return
+{
+        if ($optname == %{ SO_KEEPALIVE %} && $return == 0) {
+                host = fds[pid(), $fd, "host"];
+                len = fds[pid(), $fd, "len"];
+                printf("%s %20s %7d %24s fd:%d\n",
+                                ctime(gettimeofday_s()),
+                                execname(),
+                                pid(),
+                                _struct_sockaddr_u_ip_addr(host, len),
+                                $fd);
+        }
+}
