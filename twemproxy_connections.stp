@@ -1,6 +1,8 @@
-# count twemproxy backend connections
+# count twemproxy backend connections and timeouts
 global count;
 global total;
+global timeouts;
+global timedtotal;
 
 probe begin { print_head(); }
 
@@ -8,23 +10,40 @@ function print_head()
 {
   ansi_clear_screen();
   printf("Probing...Type CTRL+C to stop probing.\n");
-  printf("Server\t\t\t\tConnections\n");
 }
 
-probe process("/usr/local/bin/nutcracker").function("server_connect")
+probe process("/usr/local/bin/nutcracker").function("server_connect").return
 {
-        _sname = user_string($server->name->data);
-        count[_sname]++;
+        sname = user_string($server->name->data);
+        etime = gettimeofday_ms() - @entry(gettimeofday_ms());
+        count[sname]++;
+        if (etime > 100)
+                timeouts[sname, etime] = ctime(gettimeofday_s());
 }
 
 probe timer.s(1)
 {
         print_head();
+
         foreach(mc in count- limit 64) {
                 printf("%s\t%7.5d\n", mc, count[mc]);
                 total += count[mc];
         }
         printf("Total connections: %d\n", total);
+        println("--------------------------------");
+        foreach([sname, etime] in timeouts-) {
+                printf("%s %s %d ms\n", timeouts[sname, etime], sname, etime);
+                timedtotal++;
+        }
+        printf("Timed out connections: %d\n", timedtotal);
+
         delete count;
         delete total;
+}
+
+probe end
+{
+        delete count;
+        delete total;
+        delete timeouts;
 }
