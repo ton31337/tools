@@ -1,0 +1,56 @@
+# yum install systemtap-sdt-devel -y
+# CONFIGURE_OPTS="--enable-dtrace" rbenv install 2.1.3
+# stap rubytop.stp -DMAXMAPENTRIES=10240 -p4 -m rubytop
+# staprun rubytop sort_etime=<0|1> num=<integer>
+# @ton31337
+
+global calls;
+global etimes;
+global sort_etime=0;
+global num=20;
+@define stats %( printf("%-8d %-8d %-20d [%s#%s] %s:%d\n", pid, calls[pid, class, method, file, line, etime], etime, class, method, file, line) %)
+
+function print_head()
+{
+        ansi_clear_screen();
+        printf("Probing...Type CTRL+C to stop probing.\n");
+        printf("%-8s %-8s %-20s %s\n", "PID", "COUNT", "ETIME (us)", "METHOD");
+}
+
+function print_stats(num:long)
+{
+        if(sort_etime) {
+              foreach([pid, class, method, file, line, etime-] in calls limit num)
+                      @stats;
+        } else {
+              foreach([pid, class, method, file, line, etime] in calls- limit num)
+                      @stats;
+        }
+}
+
+probe process("/opt/rbenv/versions/2.1.3/bin/ruby").mark("method__entry")
+{
+        class = user_string($arg1);
+        method = user_string($arg2);
+        etimes[pid(), class, method] = gettimeofday_us();
+}
+
+probe process("/opt/rbenv/versions/2.1.3/bin/ruby").mark("method__return")
+{
+        class = user_string($arg1);
+        method = user_string($arg2);
+        file = user_string($arg3);
+        line = $arg4;
+        etime = gettimeofday_us() - etimes[pid(), class, method];
+        calls[pid(), class, method, file, line, etime]++;
+}
+
+probe timer.s(1) {
+        print_head();
+        print_stats(num);
+}
+
+probe timer.s(15) {
+        delete calls;
+        delete etimes;
+}
