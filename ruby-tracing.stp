@@ -9,9 +9,9 @@ global etimes;
 global sort_etime=0;
 global num=20;
 @define skip(x,y) %( if(isinstr(@x, @y)) next; %)
-@define stats %( printf("<%d.%06d> pid:%-8d count:%-8d [%s#%s] %s:%d\n",
+@define stats %( printf("<%d.%06d> tid:%-8d count:%-8d [%s#%s] %s:%d\n",
   (etime / 1000000), (etime % 1000000),
-  pid, calls[pid, class, method, file, line, etime], class, method, file, line) %)
+  tid, calls[tid, class, method, file, line, etime], class, method, file, line) %)
 
 function print_head()
 {
@@ -22,10 +22,10 @@ function print_head()
 function print_stats()
 {
         if(sort_etime) {
-              foreach([pid, class, method, file, line, etime-] in calls limit num)
+              foreach([tid, class, method, file, line, etime-] in calls limit num)
                       @stats;
         } else {
-              foreach([pid, class, method, file, line, etime] in calls- limit num)
+              foreach([tid, class, method, file, line, etime] in calls- limit num)
                       @stats;
         }
 }
@@ -35,7 +35,7 @@ probe process("/opt/rbenv/versions/2.1.3/bin/ruby").mark("method__entry")
         class = user_string($arg1);
         method = user_string($arg2);
         @skip(class, "Kernel");
-        etimes[pid(), class, method] = gettimeofday_us();
+        etimes[tid(), class, method] = gettimeofday_us();
 }
 
 probe process("/opt/rbenv/versions/2.1.3/bin/ruby").mark("method__return")
@@ -45,8 +45,8 @@ probe process("/opt/rbenv/versions/2.1.3/bin/ruby").mark("method__return")
         file = user_string($arg3);
         line = $arg4;
         @skip(class, "Kernel");
-        etime = gettimeofday_us() - etimes[pid(), class, method];
-        calls[pid(), class, method, file, line, etime]++;
+        etime = gettimeofday_us() - etimes[tid(), class, method];
+        calls[tid(), class, method, file, line, etime]++;
 }
 
 probe timer.s(1) {
