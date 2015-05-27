@@ -1,0 +1,19 @@
+global tablec;
+global indexc;
+
+probe process("/usr/sbin/mysqld").function("row_search_for_mysql")
+{
+        tablec[user_string($prebuilt->table->name)]++;
+        indexc[user_string($prebuilt->index->name)]++;
+}
+
+probe timer.s(1)
+{
+        foreach(table in tablec- limit 10) {
+                printf("table %s -> %d\n", table, tablec[table]);
+        }
+        foreach(index in indexc- limit 10) {
+                printf("index %s -> %d\n", index, indexc[index]);
+        }
+        exit();
+}
