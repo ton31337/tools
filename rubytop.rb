@@ -89,9 +89,6 @@ probe process("#{options[:path]}").mark("method__return")
 probe timer.s(#{options[:refresh]}) {
         print_head();
         print_stats();
-}
-
-probe timer.s(60), end {
         delete calls;
         delete etimes;
 }
