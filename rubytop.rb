@@ -95,6 +95,6 @@ probe timer.s(#{options[:refresh]}) {
 EOF
 
 print "Compiling, please wait...\n"
-IO.popen("echo '#{content}' | stap -DMAXMAPENTRIES=10240 -") do |cmd|
-  print $_ while cmd.gets
+IO.popen("echo '#{content}' | stap -DMAXMAPENTRIES=102400 -DSTP_OVERLOAD_THRESHOLD -g --suppress-time-limits -") do |cmd|
+    print $_ while cmd.gets
 end
