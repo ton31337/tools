@@ -7,12 +7,18 @@ require 'optparse'
 options = {:count => 20,
            :refresh => 1,
            :sort => 0,
+           :class => nil,
+           :gt => 0,
            :path => "/opt/rbenv/versions/2.2.2/bin/ruby"}
 
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: rubytop.rb [options]"
 
-  opts.on('-c', '--count <integer>', 'Count') do |count|
+  opts.on('-g', '--greater <integer>', 'Filter if latency is greater than X ms') do |gt|
+    options[:gt] = gt.to_i * 1000;
+  end
+
+  opts.on('-n', '--num <integer>', 'Show only X entries') do |count|
     options[:count] = count;
   end
 
@@ -26,6 +32,10 @@ parser = OptionParser.new do |opts|
 
   opts.on('-s', '--sort_time', 'Sort by time') do |sort|
     options[:sort] = 1;
+  end
+
+  opts.on('-c', '--class <string>', 'Filter only by class') do |klass|
+    options[:class] = klass;
   end
 
   opts.on('-h', '--help', 'Displays Help') do
@@ -43,6 +53,7 @@ global etimes;
 global sort_etime=#{options[:sort]};
 
 @define skip(x,y) %( if(isinstr(@x, @y)) next; %)
+@define only(x,y) %( if(!isinstr(@x, @y)) next; %)
 @define stats %( printf("<%d.%06d> tid:%-8d count:%-8d [%s#%s] %s:%d\\n",
   (etime / 1000000), (etime % 1000000),
   tid, calls[tid, class, method, file, line, etime], class, method, file, line) %)
@@ -69,6 +80,13 @@ probe process("#{options[:path]}").mark("method__entry")
         class = user_string($arg1);
         method = user_string($arg2);
         @skip(class, "Kernel");
+EOF
+if options[:class]
+content += <<EOF
+        @only(class, \"#{options[:class]}\");
+EOF
+end
+content += <<EOF
         etimes[tid(), class, method] = gettimeofday_us();
 }
 
@@ -79,8 +97,15 @@ probe process("#{options[:path]}").mark("method__return")
         file = user_string($arg3);
         line = $arg4;
         @skip(class, "Kernel");
+EOF
+if options[:class]
+content += <<EOF
+        @only(class, \"#{options[:class]}\");
+EOF
+end
+content += <<EOF
         etime = gettimeofday_us() - etimes[tid(), class, method];
-        if (!etimes[tid(), class, method])
+        if (!etimes[tid(), class, method] || etime < #{options[:gt]})
                 next;
 
         calls[tid(), class, method, file, line, etime]++;
@@ -92,9 +117,14 @@ probe timer.s(#{options[:refresh]}) {
         delete calls;
         delete etimes;
 }
+
+probe end {
+        delete calls;
+        delete etimes;
+}
 EOF
 
 print "Compiling, please wait...\n"
-IO.popen("echo '#{content}' | stap -DMAXMAPENTRIES=102400 -DSTP_OVERLOAD_THRESHOLD -g --suppress-time-limits -") do |cmd|
-    print $_ while cmd.gets
+IO.popen("echo '#{content}' | stap -DMAXMAPENTRIES=102400 -g --suppress-time-limits -") do |cmd|
+  print $_ while cmd.gets
 end
