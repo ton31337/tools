@@ -6,7 +6,7 @@ require 'optparse'
 
 options = {:count => 20,
            :refresh => 1,
-           :sort => 0,
+           :sort => nil,
            :class => nil,
            :gt => 0,
            :path => "/opt/rbenv/versions/2.2.2/bin/ruby"}
@@ -31,7 +31,7 @@ parser = OptionParser.new do |opts|
   end
 
   opts.on('-s', '--sort_time', 'Sort by time') do |sort|
-    options[:sort] = 1;
+    options[:sort] = true;
   end
 
   opts.on('-c', '--class <string>', 'Filter only by class') do |klass|
@@ -50,13 +50,9 @@ parser.parse!
 content = <<EOF
 global calls;
 global etimes;
-global sort_etime=#{options[:sort]};
 
-@define skip(x,y) %( if(isinstr(@x, @y)) next; %)
-@define only(x,y) %( if(!isinstr(@x, @y)) next; %)
-@define stats %( printf("<%d.%06d> tid:%-8d count:%-8d [%s#%s] %s:%d\\n",
-  (etime / 1000000), (etime % 1000000),
-  tid, calls[tid, class, method, file, line, etime], class, method, file, line) %)
+@define SKIP(x,y) %( if(isinstr(@x, @y)) next; %)
+@define ONLY(x,y) %( if(!isinstr(@x, @y)) next; %)
 
 function print_head()
 {
@@ -66,12 +62,9 @@ function print_head()
 
 function print_stats()
 {
-        if(sort_etime) {
-              foreach([tid, class, method, file, line, etime-] in calls limit #{options[:count]})
-                      @stats;
-        } else {
-              foreach([tid, class, method, file, line, etime] in calls- limit #{options[:count]})
-                      @stats;
+        foreach([tid, class, method, file, line, etime#{options[:sort] ? '-' : ''}] in calls#{options[:sort] ? '' : '-'} limit #{options[:count]}) {
+                printf("<%d.%06d> tid:%-8d count:%-8d [%s#%s] %s:%d\\n",
+                        (etime / 1000000), (etime % 1000000), tid, calls[tid, class, method, file, line, etime], class, method, file, line)
         }
 }
 
@@ -79,13 +72,11 @@ probe process("#{options[:path]}").mark("method__entry")
 {
         class = user_string($arg1);
         method = user_string($arg2);
-        @skip(class, "Kernel");
+        @SKIP(class, "Kernel");
 EOF
-if options[:class]
-content += <<EOF
-        @only(class, \"#{options[:class]}\");
+content += <<EOF if options[:class]
+        @ONLY(class, \"#{options[:class]}\");
 EOF
-end
 content += <<EOF
         etimes[tid(), class, method] = gettimeofday_us();
 }
@@ -96,13 +87,11 @@ probe process("#{options[:path]}").mark("method__return")
         method = user_string($arg2);
         file = user_string($arg3);
         line = $arg4;
-        @skip(class, "Kernel");
+        @SKIP(class, "Kernel");
 EOF
-if options[:class]
-content += <<EOF
-        @only(class, \"#{options[:class]}\");
+content += <<EOF if options[:class]
+        @ONLY(class, \"#{options[:class]}\");
 EOF
-end
 content += <<EOF
         etime = gettimeofday_us() - etimes[tid(), class, method];
         if (!etimes[tid(), class, method] || etime < #{options[:gt]})
