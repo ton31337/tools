@@ -1,11 +1,22 @@
-Tools
+rubytop.rb
 ==============
-`busy.stp` - find who owns the file. Sometimes `fuser` does not show this information.
+```
+$ /root/bin/rubytop.rb -h
+Usage: rubytop.rb [options]
+    -g, --greater <integer>          Filter if latency is greater than X ms
+    -n, --num <integer>              Show only X entries
+    -p, --path <string>              Ruby path
+    -r, --refresh <integer>          Refresh interval
+    -s, --sort_time                  Sort by time
+    -c, --class <string>             Filter only by class
+    -h, --help                       Displays Help
+```
 
-`io.stp` - show I/O per pid, including direction (read/write), size, count, path.
-
-`meminfo.rb` - show sockets memory usage in addition to `/proc/meminfo`.
-
-`regexp.stp` - shows which regular expression takes most time to execute. This tool is useful only with ModSecurity. 
-
-`spam.stp` - extract who spams directly using remote smtp. 
+### Example
+```
+$ /root/bin/rubytop.rb -r 3 -n 20 -g 20 -c Catalog
+Compiling, please wait...
+Probing...Type CTRL+C to stop probing.
+<0.023239> tid:26779    count:2        [Catalog#parent_ids] /opt/../catalog.rb:331
+<0.264188> tid:26779    count:1        [Catalog#localize] /opt/../catalog.rb:315
+```
