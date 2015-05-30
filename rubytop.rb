@@ -1,4 +1,4 @@
-#!/opt/rbenv/versions/2.2.2/bin/ruby
+#!/opt/rbenv/shims/ruby
 # prints mostly used methods
 # @ton31337 <donatas.abraitis@gmail.com>
 
@@ -114,11 +114,6 @@ content += <<EOF
 probe timer.s(#{options[:refresh]}) {
         print_head();
         print_stats();
-        delete calls;
-        delete etimes;
-}
-
-probe end {
         delete calls;
         delete etimes;
 }
