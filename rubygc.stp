@@ -1,0 +1,51 @@
+# ruby GC
+# @ton31337
+
+global times;
+global total;
+global nested;
+global gc;
+global slow_gc;
+global skip=1;
+
+probe process("/opt/rbenv/versions/2.2.2/bin/ruby").mark("gc__sweep__begin")
+{
+        times[tid(), nested[tid()]++] = gettimeofday_us();
+}
+
+probe process("/opt/rbenv/versions/2.2.2/bin/ruby").mark("gc__sweep__end")
+{
+        ftime = times[tid(), --nested[tid()]];
+        etime = gettimeofday_us() - ftime;
+        gc <<< etime;
+        if (etime > 1000000) {
+                slow_gc[etime] = ctime(gettimeofday_s());
+                skip = 0;
+        }
+}
+
+probe timer.s(1)
+{
+        ansi_clear_screen();
+        printf("GC %d run/s\n", @count(gc));
+        printf("GC average took <%d.%06d>\n", (@avg(gc) / 1000000), (@avg(gc) % 1000000));
+        printf("\nGC in real-time (microseconds) \n");
+        printf("=================================\n");
+        print(@hist_linear(gc, 0, 200, 10));
+        total += @count(gc);
+
+        delete gc;
+}
+
+probe timer.s(30)
+{
+        printf("Total runs per minute: %d\n", total);
+
+        if (!skip) {
+                printf("Slowest runs: \n");
+                foreach(etime in slow_gc- limit 10) {
+                        printf("%s <%d.%06d>\n", slow_gc[etime], (etime / 1000000), (etime % 1000000));
+                }
+        }
+        exit();
+}
