@@ -1,9 +1,13 @@
 --[[
-~$ sysdig -s 110 -c latency.lua 10
-15:14:10.480095775  <29.3908> read  [HTTP/1.1 200 OK..Content-Type: application/json; charset=UTF-8..Content-Length: 2341....{\"took\":30,\"timed_out\"] = 2429
-15:14:13.076961963  <40.356315> read  [HTTP/1.1 200 OK..Content-Type: application/json; charset=UTF-8..Content-Length: 2339....{\"took\":40,\"timed_out\"] = 2427
-15:14:14.716163401  <33.485128> read  [HTTP/1.1 200 OK..Content-Type: application/json; charset=UTF-8..Content-Length: 2341....{\"took\":33,\"timed_out\"] = 2429
-15:14:14.909615790  <29.150978> read  [HTTP/1.1 200 OK..Content-Type: application/json; charset=UTF-8..Content-Length: 2785....{\"took\":29,\"timed_out\"] = 2873
+~$ sysdig -c elastic_latency.lua 10
+13:23:44.451085892  <32.353684> 10.0.11.26  read  2874
+13:23:45.200981014  <54.425005> 10.0.11.26  read  2435
+13:23:45.590186469  <34.046411> 10.0.11.19  read  2429
+13:23:46.718227244  <33.360298> 10.0.11.27  read  2873
+13:23:47.456463127  <32.888553> 10.0.11.26  read  2430
+13:23:48.463144448  <11.782027> 10.0.11.27  read  2874
+13:23:50.750361240  <33.203089> 10.0.11.27  read  2875
+13:23:50.914548239  <35.488211> 10.0.11.19  read  2432
 --]]
 
 description = "show latencies of syscalls in ms"
@@ -30,6 +34,9 @@ function on_init()
     etime = chisel.request_field("evt.latency")
     ctime = chisel.request_field("evt.time")
     syscall = chisel.request_field("evt.type")
+    server_ip = chisel.request_field("fd.sip")
+    sysdig.set_snaplen(110)
+    sysdig.set_filter("fd.sport=9200")
     return true
 end
 
@@ -37,9 +44,11 @@ function on_event()
     local buf = evt.field(fbuf) or ""
     local len = evt.field(buflen) or 0
     local etime_ms = evt.field(etime) / 1000000
+    local syscall = evt.field(syscall)
+    local server_ip = evt.field(server_ip) or "null"
 
-    if tonumber(etime_ms) > latency and len > 32 and string.find(buf, "took") then
-      print(evt.field(ctime).."\t<"..etime_ms..">\t"..evt.field(syscall).."\t["..buf.."] = "..len)
+    if tonumber(etime_ms) > latency and len > 32 then
+      print(evt.field(ctime).."\t<"..etime_ms..">\t"..server_ip.."\t"..syscall.."\t"..len)
     end
     return true
 end
