@@ -14,19 +14,11 @@ options = {:count => 20,
 parser = OptionParser.new do |opts|
   opts.banner = "Usage: rubytop.rb [options]"
 
-  opts.on('-g', '--greater <integer>', 'Filter if latency is greater than X ms') do |gt|
-    options[:gt] = gt.to_i * 1000
-  end
-
   opts.on('-e', '--exclude <string>', 'Exclude cmd') do |exclude|
     options[:exclude] = exclude
   end
 
-  opts.on('-i', '--include <string>', 'Include cmd') do |inc|
-    options[:include] = inc
-  end
-
-  opts.on('-n', '--num <integer>', 'Show only X entries') do |count|
+  opts.on('-n', '--num <integer>', 'Print only X commands') do |count|
     options[:count] = count
   end
 
