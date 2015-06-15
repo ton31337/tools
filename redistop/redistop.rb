@@ -42,10 +42,12 @@ parser.parse!
 content = <<EOF
 global cmds;
 global times;
+global keys;
 
 @define SKIP(x,y) %( if(isinstr(@x, @y)) next; %)
 @define INCLUDE(x,y) %( if(!isinstr(@x, @y)) next; %)
 
+probe process("/usr/local/bin/redis-server").function("dictFind").return { keys[user_string($key)]++; }
 probe process("/usr/local/bin/redis-server").function("call").return
 {
         etime = gettimeofday_us() - @entry(gettimeofday_us());
@@ -65,6 +67,7 @@ content += <<EOF
 probe timer.s(#{options[:refresh]}) {
         ansi_clear_screen();
         println("Probing...Type CTRL+C to stop probing.");
+        printf("\\nMost used functions:\\n");
         foreach([tid, cmd] in #{options[:sort] ? 'times' : 'cmds'}- limit #{options[:count]}) {
                 etime = times[tid, cmd];
                 printf("%d\\t%d\\t<%d.%06d>\\t%s\\n",
@@ -74,8 +77,13 @@ probe timer.s(#{options[:refresh]}) {
                         (etime % 1000000),
                         cmd);
         }
+        printf("\\nMost used keys:\\n");
+        foreach(key in keys- limit #{options[:count]}) {
+                printf("%-50s %d\\n", key, keys[key]);
+        }
         delete cmds;
         delete times;
+        delete keys;
 }
 EOF
 
