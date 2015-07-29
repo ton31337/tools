@@ -2,8 +2,6 @@ description = "queue (backlog) utilization"
 short_description = "queue utilization"
 category = "misc"
 
-terminal = require "ansiterminal"
-
 args =
 {
   {
@@ -62,7 +60,6 @@ function on_interval(ts_s, ts_ns, delta)
       list = list.next
     end
     if num[port] ~= 0 then
-      terminal.clearscreen()
       print("Utilization for port "..port.." is "..(sum[port] / num[port]).."%")
     end
   end
