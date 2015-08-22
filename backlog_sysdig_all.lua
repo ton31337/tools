@@ -43,6 +43,7 @@ function on_capture_start()
   if islive then
     chisel.set_interval_s(refresh)
   end
+  print("PORT\t\tBACKLOG\t\tBACKLOGMAX")
   return true
 end
 
@@ -64,7 +65,7 @@ function on_interval(ts_s, ts_ns, delta)
     if num[port] ~= 0 then
       local avg = math.floor(sum[port] / num[port])
       local pct = math.floor(((avg * 100) / queuemax)) or 0
-      print("Utilization for port "..port.." is "..avg..":"..queuemax.." ("..pct.."%)")
+      print(port.."\t\t"..avg.." ("..pct.."%)\t\t"..queuemax)
     end
   end
   util = {}
