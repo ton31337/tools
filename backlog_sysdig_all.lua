@@ -1,7 +1,36 @@
+--[[
+backlogs.lua - inspect every port utilization.
+
+USAGE: sysdig -c backlogs <refresh> <count>
+  eg,
+
+  sysdig -c backlogs    # show ports utilization every second and stop after 10 seconds
+  sysdig -c 5           # show ports utilization every 5 second and stop after 10 seconds
+  sysdig -c '2 20'      # show ports utilization every 2 second and stpo after 20 seconds
+
+By default it will run as sysdig -c '1 10'.
+
+Copyright (C) 2015 Donatas Abraitis.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License version 2 as
+published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+--]]
+
+-- Chisel description
 description = "queue (backlog) utilization"
 short_description = "queue utilization"
 category = "misc"
 
+-- Chisel argument list
 args =
 {
   {
@@ -16,6 +45,7 @@ args =
   },
 }
 
+-- Argument notification callback
 function on_set_arg(name, val)
     if name == "stop" then
       stop_after = tonumber(val)
@@ -27,6 +57,7 @@ function on_set_arg(name, val)
     return false
 end
 
+-- Initialization callback
 function on_init()
     util = {}
     start_time = os.time()
@@ -37,6 +68,7 @@ function on_init()
     return true
 end
 
+-- Capture start callback
 function on_capture_start()
   islive = sysdig.is_live()
   local refresh = refresh or 1
@@ -47,6 +79,7 @@ function on_capture_start()
   return true
 end
 
+-- Interval callback
 function on_interval(ts_s, ts_ns, delta)
   local stop_after = stop_after or 10
   local sum = {}
@@ -72,6 +105,7 @@ function on_interval(ts_s, ts_ns, delta)
   return true
 end
 
+-- Event callback
 function on_event()
   idx = evt.field(sport)
   local syscall = evt.field(syscall)
