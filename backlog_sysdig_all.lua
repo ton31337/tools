@@ -31,7 +31,8 @@ function on_init()
     util = {}
     start_time = os.time()
     sport = chisel.request_field("fd.sport")
-    queue = chisel.request_field("evt.arg[2]")
+    queuelen = chisel.request_field("evt.arg[3]")
+    queuemax = chisel.request_field("evt.arg[4]")
     syscall = chisel.request_field("evt.type")
     return true
 end
@@ -54,13 +55,16 @@ function on_interval(ts_s, ts_ns, delta)
     local list = v
     sum[port] = 0
     num[port] = 0
+    local queuemax = list.queuemax
     while list do
-      sum[port] = sum[port] + list.queue
+      sum[port] = sum[port] + list.queuelen
       num[port] = num[port] + 1
       list = list.next
     end
     if num[port] ~= 0 then
-      print("Utilization for port "..port.." is "..(sum[port] / num[port]).."%")
+      local avg = math.floor(sum[port] / num[port])
+      local pct = math.floor(((avg * 100) / queuemax)) or 0
+      print("Utilization for port "..port.." is "..avg..":"..queuemax.." ("..pct.."%)")
     end
   end
   util = {}
@@ -71,7 +75,7 @@ function on_event()
   idx = evt.field(sport)
   local syscall = evt.field(syscall)
   if idx ~= nil and syscall == "accept" then
-    util[idx] = { next = util[idx], queue = evt.field(queue) }
+    util[idx] = { next = util[idx], queuelen = evt.field(queuelen), queuemax = evt.field(queuemax) }
   end
   return true
 end
