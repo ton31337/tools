@@ -4,9 +4,10 @@ memcachelog.lua - show most used memcached keys.
 USAGE: sysdig -c memcachelog <get|set>
   eg,
 
-  sysdig -c memcachelog         # show memcached get/set utilization
-  sysdig -c memcachelog get     # show memcached only get utilization
-  sysdig -c memcachelog set     # show memcached only set utilization
+  sysdig -c memcachelog             # show memcached get/set utilization
+  sysdig -c memcachelog get         # show memcached only get utilization
+  sysdig -c memcachelog set         # show memcached only set utilization
+  sysdig -c memcachelog 'set 1000'  # show memcached set utilization which object's size is higher than 1000
 
 By default it will print both methods.
 
@@ -37,6 +38,11 @@ args =
     name = "method",
     description = "get/set",
     optional = true
+  },
+  {
+    name = "size",
+    description = "object size",
+    optional = true
   }
 }
 
@@ -53,6 +59,9 @@ end
 function on_set_arg(name, val)
     if name == "method" then
       opt_method = val
+      return true
+    elseif name == "size" then
+      opt_size = tonumber(val)
       return true
     end
     return false
@@ -75,9 +84,12 @@ function on_event()
   if string.match(line[1], '^[gs]et') ~= nil then
     local method = line[1]
     local key = line[2]
-    local size = line[5] or 0
+    local size = tonumber(line[5]) or 0
     if key ~= nil then
       if opt_method ~= nil and opt_method ~= method then
+        return true
+      end
+      if opt_method == 'set' and size < opt_size then
         return true
       end
       print(string.format("method=%s size=%dB key=%s",
