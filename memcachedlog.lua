@@ -74,6 +74,7 @@ function on_init()
     sysdig.set_filter("proc.name=memcached and evt.type=read")
     sysdig.set_snaplen(4096)
     data = chisel.request_field("evt.arg[1]")
+    datetime = chisel.request_field("evt.datetime")
     return true
 end
 
@@ -92,10 +93,11 @@ function on_event()
       if opt_method == 'set' and size < opt_size then
         return true
       end
-      print(string.format("method=%s size=%dB key=%s",
-             method,
-             size,
-             key
+      print(string.format("%s method=%s size=%dB key=%s",
+              evt.field(datetime),
+              method,
+              size,
+              key
       ))
     end
   end
