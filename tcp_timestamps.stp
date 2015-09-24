@@ -2,11 +2,21 @@
 # net.ipv4.tcp_timestamps=0
 # @ton31337
 
+%{
+#include <linux/tcp.h>
+%}
+
 global __tcp_header;
 
-probe kernel.function("tcp_v4_do_rcv")
+function get_tcp_header_len:long(sk:long)
+%{
+        struct tcp_sock *tp = tcp_sk((struct sock *)STAP_ARG_sk);
+        THIS->__retvalue = tp->tcp_header_len;
+%}
+
+probe kernel.function("tcp_connect_init").return
 {
-        __tcp_header <<< ($skb->len - $skb->data_len);
+        __tcp_header <<< get_tcp_header_len($sk);
 }
 
 probe timer.s(1)
