@@ -16,29 +16,29 @@ function print_head()
 }
 
 probe begin { print_head(); }
-probe kernel.function("tcp_v4_do_rcv")
+probe kernel.function("tcp_v4_do_rcv"), kernel.function("tcp_v6_do_rcv")
 {
-        _rcv[$sk->sk_rcvbuf]++;
-        _snd[$sk->sk_sndbuf]++;
-        _rcv_queue[cpu()] = $sk->sk_receive_queue->qlen;
+        _rcv[ppfunc(), $sk->sk_rcvbuf]++;
+        _snd[ppfunc(), $sk->sk_sndbuf]++;
+        _rcv_queue[ppfunc(), cpu()] = $sk->sk_receive_queue->qlen;
 }
 
 probe timer.s(2)
 {
         print_head();
         println("# READ");
-        foreach(buf in _rcv- limit 5) {
-                printf("%d bytes\t\t\t%d\n", buf, _rcv[buf]);
+        foreach([family, buf] in _rcv- limit 10) {
+                printf("%s buffer: %d bytes, count: %d\n", family, buf, _rcv[family, buf]);
         }
 
         println("\n# WRITE");
-        foreach(buf in _snd- limit 5) {
-                printf("%d bytes\t\t\t%d\n", buf, _snd[buf]);
+        foreach([family, buf] in _snd- limit 10) {
+                printf("%s buffer: %d bytes, count: %d\n", family, buf, _snd[family, buf]);
         }
 
-        println("\n# BACKLOG SIZE\t\tCPU");
-        foreach(cpu in _rcv_queue- limit 10) {
-                printf("%d\t\t\t%d\n", _rcv_queue[cpu], cpu);
+        println("\n# RECEIVE QUEUES");
+        foreach([family, cpu] in _rcv_queue- limit 10) {
+                printf("%s qlen: %d, cpu: %d\n", family, _rcv_queue[family, cpu], cpu);
         }
 
         delete _rcv;
