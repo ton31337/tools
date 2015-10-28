@@ -2,7 +2,6 @@
 # show incoming queue (netdev_backlog)
 # sysctl net.ipv4.tcp_rmem
 # sysctl net.ipv4.tcp_wmem
-# sysctl net.core.netdev_max_backlog
 # @ton31337
 
 global _rcv;
@@ -21,24 +20,26 @@ probe kernel.function("tcp_v4_do_rcv")
 {
         _rcv[$sk->sk_rcvbuf]++;
         _snd[$sk->sk_sndbuf]++;
-        _rcv_queue = $sk->sk_receive_queue->qlen;
+        _rcv_queue[cpu()] = $sk->sk_receive_queue->qlen;
 }
 
 probe timer.s(2)
 {
         print_head();
         println("# READ");
-        foreach(buf in _rcv- limit 10) {
-                printf("%d\t\t\t%d\n", buf, _rcv[buf]);
+        foreach(buf in _rcv- limit 5) {
+                printf("%d bytes\t\t\t%d\n", buf, _rcv[buf]);
         }
 
         println("\n# WRITE");
-        foreach(buf in _snd- limit 10) {
-                printf("%d\t\t\t%d\n", buf, _snd[buf]);
+        foreach(buf in _snd- limit 5) {
+                printf("%d bytes\t\t\t%d\n", buf, _snd[buf]);
         }
 
-        println("\n# BACKLOG SIZE");
-        printf("%d\n", _rcv_queue);
+        println("\n# BACKLOG SIZE\t\tCPU");
+        foreach(cpu in _rcv_queue- limit 10) {
+                printf("%d\t\t\t%d\n", _rcv_queue[cpu], cpu);
+        }
 
         delete _rcv;
         delete _snd;
