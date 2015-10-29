@@ -28,12 +28,20 @@ probe timer.s(2)
         print_head();
         println("# READ");
         foreach([family, buf] in _rcv- limit 10) {
-                printf("%s buffer: %d bytes, count: %d\n", family, buf, _rcv[family, buf]);
+                printf("%s buffer: %d bytes (%d Kbytes), count: %d\n",
+                    family,
+                    buf,
+                    (buf / 1024),
+                    _rcv[family, buf]);
         }
 
         println("\n# WRITE");
         foreach([family, buf] in _snd- limit 10) {
-                printf("%s buffer: %d bytes, count: %d\n", family, buf, _snd[family, buf]);
+                printf("%s buffer: %d bytes (%d Kbytes), count: %d\n",
+                    family,
+                    buf,
+                    (buf / 1024),
+                    _snd[family, buf]);
         }
 
         println("\n# RECEIVE QUEUES");
