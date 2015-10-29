@@ -18,9 +18,10 @@ function print_head()
 probe begin { print_head(); }
 probe kernel.function("tcp_v4_do_rcv"), kernel.function("tcp_v6_do_rcv")
 {
-        _rcv[ppfunc(), $sk->sk_rcvbuf]++;
-        _snd[ppfunc(), $sk->sk_sndbuf]++;
-        _rcv_queue[ppfunc(), cpu()] = $sk->sk_receive_queue->qlen;
+        family = (ppfunc() == "tcp_v4_do_rcv") ? "inet4" : "inet6";
+        _rcv[family, $sk->sk_rcvbuf]++;
+        _snd[family, $sk->sk_sndbuf]++;
+        _rcv_queue[family, cpu()] = $sk->sk_receive_queue->qlen;
 }
 
 probe timer.s(2)
