@@ -1,0 +1,15 @@
+global counter;
+
+probe process("/usr/local/openresty/nginx/sbin/nginx").function("ngx_http_lua_socket_tcp_send").return
+{
+        x = gettimeofday_us() - @entry(gettimeofday_us());
+        counter <<< x;
+}
+
+probe timer.s(1)
+{
+        if (@count(counter)) {
+                printf("min: %d, max: %d, avg: %d, count: %d\n", @min(counter), @max(counter), @avg(counter), @count(counter));
+                delete counter;
+        }
+}
