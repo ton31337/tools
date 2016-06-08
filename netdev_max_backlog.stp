@@ -1,0 +1,19 @@
+# Tested with 3.10.0-327.18.2.el7.x86_64
+
+%{
+#include <linux/tcp.h>
+%}
+
+function get_queue_len:long(cpu:long)
+%{
+    struct softnet_data *sd;
+    sd = &per_cpu(softnet_data, STAP_ARG_cpu);
+    THIS->__retvalue = skb_queue_len(&sd->input_pkt_queue);
+%}
+
+probe kernel.function("enqueue_to_backlog")
+{
+    queue_length = get_queue_len($cpu);
+    if (queue_length)
+        printf("cpu: %d, queue: %d\n", $cpu, queue_length);
+}
