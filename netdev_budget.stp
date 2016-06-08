@@ -1,0 +1,13 @@
+# Tested with 3.10.0-327.18.2.el7.x86_64
+# Maximum number of packets taken from all interfaces in one polling cycle (NAPI
+# poll). In one polling cycle interfaces which are registered to polling are
+# probed in a round-robin manner.
+
+probe kernel.statement("net_rx_action@net/core/dev.c:4464")
+{
+    avail_budget = $budget - $work;
+    percentile = (avail_budget * 100) / $budget;
+
+    if (percentile < 50 && percentile >= 0)
+        printf("%d %d\n", cpu(), percentile);
+}
