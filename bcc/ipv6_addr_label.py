@@ -30,4 +30,7 @@ b.trace_print()
            ping6-5707  [000] d... 167873.404414: : ifindex: -1, label: 6
            ping6-5707  [000] d... 167874.406325: : ifindex: -1, label: 6
            ping6-5707  [000] d... 167875.408850: : ifindex: -1, label: 6
+
+vagrant@vagrant:~$ ip addrlabel | grep 'label 6'
+prefix 2001::/32 label 6
 """
