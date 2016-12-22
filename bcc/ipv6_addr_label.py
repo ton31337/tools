@@ -3,7 +3,6 @@
 from bcc import BPF
 
 bcc_prog = """
-#define KBUILD_MODNAME "enqueue_to_backlog"
 #include <uapi/linux/ptrace.h>
 #include <net/sock.h>
 #include <bcc/proto.h>
