@@ -2,28 +2,22 @@
 // Copyright: (C) 2020 Donatas Abraitis. GPLv2.
 
 @bgp_flag_check@
-type T;
-T *E;
-constant C;
+expression E1, E2;
 @@
 
-- bgp_flag_check(E, C)
-+ CHECK_FLAG(E->flags, C)
+- bgp_flag_check(E1, E2)
++ CHECK_FLAG(E1->flags, E2)
 
 @bgp_flag_set@
-type T;
-T *E;
-constant C;
+expression E1, E2;
 @@
 
-- bgp_flag_set(E, C)
-+ SET_FLAG(E->flags, C)
+- bgp_flag_set(E1, E2)
++ SET_FLAG(E1->flags, E2)
 
 @bgp_flag_unset@
-type T;
-T *E;
-constant C;
+expression E1, E2;
 @@
 
-- bgp_flag_unset(E, C)
-+ UNSET_FLAG(E->flags, C)
+- bgp_flag_unset(E1, E2)
++ UNSET_FLAG(E1->flags, E2)
