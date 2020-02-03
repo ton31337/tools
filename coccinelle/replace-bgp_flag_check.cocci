@@ -15,3 +15,5 @@ expression E1, E2;
 - bgp_flag_unset(E1, E2)
 + UNSET_FLAG(E1->flags, E2)
 )
+
+

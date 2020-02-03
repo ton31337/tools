@@ -2,11 +2,27 @@
 // Copyright: (C) 2020 Donatas Abraitis. GPLv2.
 
 @@
-expression e, t;
+expression E;
 @@
 
-- if (e) {
-+ if (e)
-    XFREE(t, e);
-- e = NULL;
+(
+if (...)
+- {
+    E;
 - }
+|
+if (...)
+{
+  E;
+} else
+- {
+    E;
+- }
+|
+if (...)
+  E;
+else
+- {
+    E;
+- }
+)
