@@ -1,0 +1,10 @@
+[Unit]
+Requires=php-fpm-u1.service
+After=php-fpm-u1.service
+Requires=h5g-u1.socket
+After=h5g-u1.socket
+
+[Service]
+User=www-data
+Group=www-data
+ExecStart=/lib/systemd/systemd-socket-proxyd /tmp/u1-php-fpm.socket

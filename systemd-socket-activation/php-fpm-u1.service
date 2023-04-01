@@ -1,0 +1,10 @@
+[Unit]
+After=network.target
+
+[Service]
+Type=notify
+ExecStart=/usr/sbin/php-fpm7.4 --nodaemonize --fpm-config /etc/php/h5g/u1.conf
+ExecReload=/bin/kill -USR2 $MAINPID
+
+[Install]
+WantedBy=multi-user.target
