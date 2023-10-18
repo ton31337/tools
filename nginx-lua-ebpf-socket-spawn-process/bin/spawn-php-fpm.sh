@@ -1,4 +1,5 @@
 #!/bin/bash
+# $ shc -f spawn-php-fpm.sh -o spawn-php-fpm
 
 set -x
 

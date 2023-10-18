@@ -1,4 +1,5 @@
 #!/bin/bash
+# $ shc -f spawn.sh -o spawn
 
 set -x
 
