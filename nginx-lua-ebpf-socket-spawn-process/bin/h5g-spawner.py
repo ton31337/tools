@@ -46,7 +46,7 @@ b.attach_kprobe(event="__sys_connect", fn_name="schedule_spawn")
 def spawn_process(cpu, data, size):
     output = b["events"].event(data)
     process = subprocess.Popen(
-        ["/opt/h5g/bin/spawn", output.sun_path],
+        ["/opt/h5g/bin/spawn.sh", output.sun_path],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

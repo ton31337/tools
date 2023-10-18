@@ -11,14 +11,10 @@ US_USER="${US_NAME::-7}"
 
 if [[ ${US_PATH} == *".socket"*   ]]; then
 	[ -S "${US_PATH}" ] ||
-		unshare --map-root-user \
-			--user \
+		unshare \
 			--mount \
-			--pid \
-			--mount-proc \
-			--fork \
 			--propagation private \
-			/opt/h5g/bin/spawn-php-fpm "${US_USER}" \
+			/opt/h5g/bin/spawn-php-fpm.sh "${US_USER}" \
 			2>"/tmp/unshare-${US_USER}.log" \
 			>"/tmp/unshare-${US_USER}.log"
 fi
