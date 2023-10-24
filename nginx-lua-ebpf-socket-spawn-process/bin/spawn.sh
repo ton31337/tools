@@ -11,7 +11,7 @@ US_USER="${US_NAME::-7}"
 
 if [[ ${US_PATH} == *".socket"*   ]]; then
 	[ -S "${US_PATH}" ] ||
-		unshare \
+		/usr/bin/unshare \
 			--mount \
 			--propagation private \
 			/opt/h5g/bin/spawn-php-fpm.sh "${US_USER}" \
