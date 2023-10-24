@@ -63,12 +63,20 @@ class Spawner:
         self.log.setLevel(logging.DEBUG)
 
     def socket2username(self, path):
+        """
+        A helper method to validate if we got a valid socket path.
+        """
         m = re.search(r"(u[0-9]{1,8})\.socket", path)
         if not m:
+            self.log.error(f"can't parse socket path to username: {path}")
             return None
         return m[1]
 
     def terminate(self, pid_file, msg):
+        """
+        Send a termination signal for the pid that belongs to the
+        php-fpm process we would like to terminate due to idle timeout.
+        """
         with open(pid_file, "r") as f:
             pid = int(f.read())
             if pid > 1:
@@ -76,6 +84,11 @@ class Spawner:
                 os.kill(pid, signal.SIGINT)
 
     def spawn(self, _cpu, data, _size):
+        """
+        When we receive `connect()`, we run `spawn.sh` command with an
+        argument, which is in our case a socket's path.
+        E.g.: `spawn.sh /tmp/u2.socket`.
+        """
         output = b["events"].event(data)
         sun_path = output.sun_path.decode("utf-8")
 
@@ -94,6 +107,14 @@ class Spawner:
         )
 
     def reap_timer(self):
+        """
+        Iterate over the `socket_dir` and check the existing/running
+        php-fpm processes.
+        If the socket didn't have any request during the idle timeout,
+        then terminate php-fpm for that specific user.
+        If php-fpm was running before we started this program, we should
+        check how it long it was active by evaluating socket's file ATIME.
+        """
         self.log.debug("Checking idle php-fpm processes...")
         for f in os.listdir(self.socket_dir):
             sun_path = f"{self.socket_dir}/{f}"
@@ -126,6 +147,11 @@ class Spawner:
                 )
 
     def reap(self, func, stop_event):
+        """
+        The process reaping thread, that calls another function periodically.
+        In our case `reap_timer()`.
+        """
+
         def expired():
             while not stop_event.is_set():
                 for _ in range(self.idle_timeout):
@@ -136,6 +162,7 @@ class Spawner:
 
         thread = threading.Thread(target=expired)
         thread.start()
+
 
 if __name__ == "__main__":
     h5g = Spawner()
