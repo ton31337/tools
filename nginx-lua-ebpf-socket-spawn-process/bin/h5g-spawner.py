@@ -169,6 +169,9 @@ if __name__ == "__main__":
     b["events"].open_perf_buffer(h5g.spawn, page_cnt=2048)
     h5g.reap(h5g.reap_timer, h5g.thread_stop_event)
     h5g.log.info("Running, and waiting for `connect()` events...")
+    h5g.log.info(f"socket path: {h5g.socket_dir}")
+    h5g.log.info(f"bin path: {h5g.bin_dir}")
+    h5g.log.info(f"idle timeout: {h5g.idle_timeout}")
 
     while True:
         try:
