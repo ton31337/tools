@@ -137,14 +137,15 @@ class Spawner:
         thread = threading.Thread(target=expired)
         thread.start()
 
+if __name__ == "__main__":
+    h5g = Spawner()
+    b["events"].open_perf_buffer(h5g.spawn, page_cnt=2048)
+    h5g.reap(h5g.reap_timer, h5g.thread_stop_event)
+    h5g.log.info("Running, and waiting for `connect()` events...")
 
-h5g = Spawner()
-b["events"].open_perf_buffer(h5g.spawn)
-h5g.reap(h5g.reap_timer, h5g.thread_stop_event)
-
-while True:
-    try:
-        b.perf_buffer_poll()
-    except KeyboardInterrupt:
-        h5g.thread_stop_event.set()
-        exit()
+    while True:
+        try:
+            b.perf_buffer_poll()
+        except KeyboardInterrupt:
+            h5g.thread_stop_event.set()
+            exit()
