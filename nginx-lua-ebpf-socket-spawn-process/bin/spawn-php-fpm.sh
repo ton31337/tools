@@ -15,6 +15,7 @@ CHROOT="/var/lib/machines/debian"
 /bin/mount --bind --make-unbindable /opt/h5g/skeleton/etc/php-fpm.conf "${CHROOT}/etc/php-fpm.conf"
 /bin/mount --bind --make-unbindable /var/www/u2 "${CHROOT}/var/www/u2"
 /bin/mount --bind --make-unbindable /tmp "${CHROOT}/tmp"
-/bin/mount -t proc none "${CHROOT}/proc"
+/bin/mount --type proc none "${CHROOT}/proc" || \
+    /bin/mount -o remount --type proc none "${CHROOT}/proc"
 /bin/mount -o remount,noexec,nosuid,nodev "${CHROOT}/tmp"
 /usr/sbin/chroot "${CHROOT}" sudo -u www-data /usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm.conf
