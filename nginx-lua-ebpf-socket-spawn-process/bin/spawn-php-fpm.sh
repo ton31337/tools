@@ -8,6 +8,16 @@
 # sudo /home/donatas/minijail/minijail-linux-v18/minijail0 \
 #    -c 0xffffffff --ambient -u www-data -p -i -f /tmp/h5g/u2.jail.pid \
 #    -- /usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm/h5g/u2.conf
+#
+# Configure cgroups:
+#% cat /etc/cgroup.conf
+#group www-data {
+#  cpu {
+#    cpu.shares = 100;
+#    cpu.cfs_quota_us = 1000;
+#  }
+# ...
+# Do not forget to do `cgconfigparser -l /etc/cgroup.conf`
 
 set -x
 set -e
@@ -23,4 +33,6 @@ CHROOT="/var/lib/machines/debian"
 /bin/mount --type proc none "${CHROOT}/proc" || \
     /bin/mount -o remount --type proc none "${CHROOT}/proc"
 /bin/mount -o remount,noexec,nosuid,nodev "${CHROOT}/tmp"
-/sbin/capsh --drop=all --user=www-data --chroot="${CHROOT}" -- -c '/usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm.conf'
+/usr/bin/cgexec -g cpu:www-data \
+	/usr/bin/prlimit --nofile=256 --nproc=512 --locks=32 \
+	/sbin/capsh --drop=all --user=www-data --chroot="${CHROOT}" -- -c '/usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm.conf'
