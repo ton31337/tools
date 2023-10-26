@@ -23,4 +23,4 @@ CHROOT="/var/lib/machines/debian"
 /bin/mount --type proc none "${CHROOT}/proc" || \
     /bin/mount -o remount --type proc none "${CHROOT}/proc"
 /bin/mount -o remount,noexec,nosuid,nodev "${CHROOT}/tmp"
-/usr/sbin/chroot --userspec=www-data "${CHROOT}" /usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm.conf
+/sbin/capsh --drop=all --user=www-data --chroot="${CHROOT}" -- -c '/usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm.conf'
