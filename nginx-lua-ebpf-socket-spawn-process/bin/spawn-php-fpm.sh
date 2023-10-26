@@ -3,6 +3,11 @@
 #
 # Make sure the host has this /proc mount (hidepid=2)
 # mount -o remount,hidepid=2 /proc
+#
+# Another option would be using minijail() (= minijail0):
+# sudo /home/donatas/minijail/minijail-linux-v18/minijail0 \
+#    -c 0xffffffff --ambient -u www-data -p -i -f /tmp/h5g/u2.jail.pid \
+#    -- /usr/sbin/php-fpm8.2 --fpm-config /etc/php-fpm/h5g/u2.conf
 
 set -x
 set -e
