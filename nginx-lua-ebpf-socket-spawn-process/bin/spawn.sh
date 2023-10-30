@@ -10,11 +10,12 @@ US_NAME=$(basename "${US_PATH}")
 US_USER="${US_NAME::-7}"
 
 if [[ ${US_PATH} == *".socket"*   ]]; then
-	[ -S "${US_PATH}" ] ||
+	if ! grep "${US_PATH}" /proc/net/unix; then
 		/usr/bin/unshare \
 			--mount \
 			--propagation private \
 			/opt/h5g/bin/spawn-php-fpm.sh "${US_USER}" \
 			2>"/tmp/unshare-${US_USER}.log" \
 			>"/tmp/unshare-${US_USER}.log"
+	fi
 fi
