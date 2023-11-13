@@ -22,7 +22,7 @@ struct h5g {
     char sun_path[SUN_PATH_LEN];
 };
 
-BPF_PERF_OUTPUT(events);
+BPF_RINGBUF_OUTPUT(events, 2048);
 
 struct sockaddr_un {
     sa_family_t sun_family;
@@ -43,7 +43,7 @@ void schedule_spawn(struct pt_regs *ctx, int fd, struct sockaddr *uservaddr,
     bpf_probe_read_user_str(&h5g.sun_path, sizeof(h5g.sun_path),
                             sock->sun_path);
 
-    events.perf_submit(ctx, &h5g, sizeof(h5g));
+    events.ringbuf_output(&h5g, sizeof(h5g), 0);
 }
 """
 
@@ -167,7 +167,7 @@ class Spawner:
 
 if __name__ == "__main__":
     h5g = Spawner()
-    b["events"].open_perf_buffer(h5g.spawn, page_cnt=2048)
+    b["events"].open_ring_buffer(h5g.spawn)
     h5g.reap(h5g.reap_timer, h5g.thread_stop_event)
     h5g.log.info("Running, and waiting for `connect()` events...")
     h5g.log.info(f"socket path: {h5g.socket_dir}")
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     while True:
         try:
-            b.perf_buffer_poll()
+            b.ring_buffer_poll()
         except KeyboardInterrupt:
             h5g.thread_stop_event.set()
             exit()
