@@ -99,7 +99,19 @@ class Spawner:
         if not self.socket2username(sun_path):
             return
 
-        self.last_seen[sun_path] = int(time.time())
+        now = int(time.time())
+
+        # If we receive a burst of connect()s, we should avoid saturating
+        # ring buffer for user-space/kernel-space communication.
+        # With this limitation, we send only _legit_ requests down to the user-space,
+        # and spawn.sh is doing the decent job.
+        if (
+            sun_path in self.last_seen
+            and now - self.last_seen[sun_path] < self.idle_timeout / 2
+        ):
+            return
+
+        self.last_seen[sun_path] = now
 
         subprocess.Popen(
             [os.path.join(self.bin_dir, "spawn.sh"), sun_path],
