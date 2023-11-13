@@ -12,7 +12,6 @@ import logging
 from stat import *
 
 bcc_prog = """
-#define KBUILD_MODNAME "h5g spawner"
 #include <uapi/linux/ptrace.h>
 #include <net/sock.h>
 #include <bcc/proto.h>
@@ -41,7 +40,9 @@ void schedule_spawn(struct pt_regs *ctx, int fd, struct sockaddr *uservaddr,
 
     sock = (struct sockaddr_un *)uservaddr;
 
-    __builtin_memcpy(&h5g.sun_path, sock->sun_path, sizeof(h5g.sun_path));
+    bpf_probe_read_user_str(&h5g.sun_path, sizeof(h5g.sun_path),
+                            sock->sun_path);
+
     events.perf_submit(ctx, &h5g, sizeof(h5g));
 }
 """
