@@ -65,6 +65,7 @@ class Spawner:
         self.socket_dir = "/tmp/h5g"
         self.idle_timeout = 10
         self.last_seen = {}
+        self.seen_counter = {}
         self.thread_stop_event = threading.Event()
         self.log = logging.getLogger(__name__)
         self.log.setLevel(logging.DEBUG)
@@ -104,6 +105,11 @@ class Spawner:
 
         if not self.socket2username(sun_path):
             return
+
+        if sun_path in self.seen_counter:
+            self.seen_counter[sun_path] = self.seen_counter[sun_path] + 1
+        else:
+            self.seen_counter[sun_path] = 0
 
         now = int(time.time())
 
@@ -197,4 +203,6 @@ if __name__ == "__main__":
             b.ring_buffer_poll()
         except KeyboardInterrupt:
             h5g.thread_stop_event.set()
+            h5g.log.debug(h5g.last_seen)
+            h5g.log.debug(h5g.seen_counter)
             exit()
