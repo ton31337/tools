@@ -17,12 +17,14 @@ bcc_prog = """
 #include <bcc/proto.h>
 
 #define SUN_PATH_LEN 108
+#define MIN_USER_ID 30
+
+BPF_RINGBUF_OUTPUT(events, 1 << 12);
 
 struct h5g {
     char sun_path[SUN_PATH_LEN];
+    u32 uid;
 };
-
-BPF_RINGBUF_OUTPUT(events, 2048);
 
 struct sockaddr_un {
     sa_family_t sun_family;
@@ -33,17 +35,21 @@ void schedule_spawn(struct pt_regs *ctx, int fd, struct sockaddr *uservaddr,
                     int addrlen)
 {
     struct sockaddr_un *sock = NULL;
-    struct h5g h5g = {};
+    struct h5g event = {};
 
     if (uservaddr->sa_family != AF_UNIX)
         return;
 
+    event.uid = bpf_get_current_uid_gid();
+    if (event.uid < MIN_USER_ID)
+        return;
+
     sock = (struct sockaddr_un *)uservaddr;
 
-    bpf_probe_read_user_str(&h5g.sun_path, sizeof(h5g.sun_path),
+    bpf_probe_read_user_str(&event.sun_path, sizeof(event.sun_path),
                             sock->sun_path);
 
-    events.ringbuf_output(&h5g, sizeof(h5g), 0);
+    events.ringbuf_output(&event, sizeof(event), 0);
 }
 """
 
