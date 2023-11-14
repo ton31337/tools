@@ -62,7 +62,7 @@ class Spawner:
         logging.basicConfig(format="%(levelname)s: %(message)s", stream=sys.stdout)
 
         self.bin_dir = "/opt/h5g/bin"
-        self.socket_dir = "/tmp/h5g"
+        self.socket_dir = "/opt/h5g/run"
         self.idle_timeout = 10
         self.last_seen = {}
         self.seen_counter = {}
