@@ -143,8 +143,12 @@ class Spawner:
         self.log.debug("Checking idle php-fpm processes...")
         for f in os.listdir(self.socket_dir):
             sun_path = f"{self.socket_dir}/{f}"
-            s = os.lstat(sun_path)
-            if not S_ISSOCK(s.st_mode):
+
+            try:
+                s = os.lstat(sun_path)
+                if not S_ISSOCK(s.st_mode):
+                    continue
+            except:
                 continue
 
             username = self.socket2username(sun_path)
