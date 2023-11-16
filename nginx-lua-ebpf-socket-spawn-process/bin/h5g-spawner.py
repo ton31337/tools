@@ -89,7 +89,10 @@ class Spawner:
             pid = int(f.read())
             if pid > 1:
                 self.log.info(msg)
-                os.kill(pid, signal.SIGINT)
+                try:
+                    os.kill(pid, signal.SIGINT)
+                except:
+                    pass
 
     def spawn(self, _cpu, data, _size):
         """
