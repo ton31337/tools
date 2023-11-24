@@ -17,7 +17,7 @@ bcc_prog = """
 #include <bcc/proto.h>
 
 #define SUN_PATH_LEN 108
-#define MIN_USER_ID 30
+#define PERMIT_USER_ID 33 /* www-data */
 
 BPF_RINGBUF_OUTPUT(events, 1 << 12);
 
@@ -41,7 +41,7 @@ void schedule_spawn(struct pt_regs *ctx, int fd, struct sockaddr *uservaddr,
         return;
 
     e.uid = bpf_get_current_uid_gid();
-    if (e.uid < MIN_USER_ID)
+    if (e.uid != PERMIT_USER_ID)
         return;
 
     sock = (struct sockaddr_un *)uservaddr;
