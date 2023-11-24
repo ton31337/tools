@@ -75,7 +75,7 @@ class Spawner:
         A helper method to validate if we got a valid socket path.
         E.g.: u000000002-example.org/php.socket
         """
-        m = re.search(r"(u[\d\w]{1,9}-.+)\/php\.socket$", path)
+        m = re.search(r"(u[\d\w]{1,9}-.+)\/(php|ssh)\.socket$", path)
         if not m:
             self.log.error(f"can't parse socket path to username: {path}")
             return None
@@ -86,7 +86,7 @@ class Spawner:
         A helper method to validate if we got a valid pid path.
         E.g.: u000000002-example.org-php.pid
         """
-        m = re.search(r"(u[\d\w]{1,9})-(.+)-php\.pid$", path)
+        m = re.search(r"(u[\d\w]{1,9})-(.+)-(php|ssh)\.pid$", path)
         if not m:
             self.log.error(f"can't parse pidfile path to username: {path}")
             return None
@@ -155,7 +155,7 @@ class Spawner:
         If php-fpm was running before we started this program, we should
         check how it long it was active by evaluating socket's file ATIME.
         """
-        self.log.debug("Checking idle php-fpm processes...")
+        self.log.debug("Checking idle user processes...")
         for f in os.listdir(self.run_dir):
             pid_file = f"{self.run_dir}/{f}"
             try:
@@ -178,7 +178,7 @@ class Spawner:
             ):
                 self.terminate(
                     pid_file,
-                    f"Terminating php-fpm process (no requests during idle timeout) for {username}",
+                    f"Terminating user process (no requests during idle timeout) for {username}",
                 )
 
             if (
@@ -187,7 +187,7 @@ class Spawner:
             ):
                 self.terminate(
                     pid_file,
-                    f"Terminating php-fpm process (socket created, but no requests during idle timeout) for {username}",
+                    f"Terminating user process (socket created, but no requests during idle timeout) for {username}",
                 )
 
     def reap(self, func, stop_event):
