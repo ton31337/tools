@@ -62,8 +62,8 @@ class Spawner:
         logging.basicConfig(format="%(levelname)s: %(message)s", stream=sys.stdout)
 
         self.bin_dir = "/opt/h5g/bin"
-        self.socket_dir = "/opt/h5g/run"
-        self.idle_timeout = 10
+        self.run_dir = "/opt/h5g/run"
+        self.idle_timeout = 30
         self.last_seen = {}
         self.seen_counter = {}
         self.thread_stop_event = threading.Event()
@@ -73,12 +73,24 @@ class Spawner:
     def socket2username(self, path):
         """
         A helper method to validate if we got a valid socket path.
+        E.g.: u000000002-example.org/php.socket
         """
-        m = re.search(r"(u[0-9]{1,8})\.socket", path)
+        m = re.search(r"(u[\d\w]{1,9}-.+)\/php\.socket$", path)
         if not m:
             self.log.error(f"can't parse socket path to username: {path}")
             return None
         return m[1]
+
+    def pidfile2username(self, path):
+        """
+        A helper method to validate if we got a valid pid path.
+        E.g.: u000000002-example.org-php.pid
+        """
+        m = re.search(r"(u[\d\w]{1,9})-(.+)-php\.pid$", path)
+        if not m:
+            self.log.error(f"can't parse pidfile path to username: {path}")
+            return None
+        return m[1], m[2]
 
     def terminate(self, pid_file, msg):
         """
@@ -103,7 +115,7 @@ class Spawner:
         output = b["events"].event(data)
         sun_path = output.sun_path.decode("utf-8")
 
-        if self.socket_dir not in sun_path:
+        if self.run_dir not in sun_path:
             return
 
         if not self.socket2username(sun_path):
@@ -136,7 +148,7 @@ class Spawner:
 
     def reap_timer(self):
         """
-        Iterate over the `socket_dir` and check the existing/running
+        Iterate over the `run_dir` and check the existing/running
         php-fpm processes.
         If the socket didn't have any request during the idle timeout,
         then terminate php-fpm for that specific user.
@@ -144,21 +156,21 @@ class Spawner:
         check how it long it was active by evaluating socket's file ATIME.
         """
         self.log.debug("Checking idle php-fpm processes...")
-        for f in os.listdir(self.socket_dir):
-            sun_path = f"{self.socket_dir}/{f}"
-
+        for f in os.listdir(self.run_dir):
+            pid_file = f"{self.run_dir}/{f}"
             try:
-                s = os.lstat(sun_path)
-                if not S_ISSOCK(s.st_mode):
+                s = os.lstat(pid_file)
+                if not S_ISREG(s.st_mode):
                     continue
             except:
                 continue
 
-            username = self.socket2username(sun_path)
+            username, bundle = self.pidfile2username(pid_file)
             if not username:
                 continue
 
-            pid_file = f"{self.socket_dir}/{username}.pid"
+            sun_path = f"{self.run_dir}/{username}/{bundle}.socket"
+            print(sun_path)
 
             if (
                 sun_path in self.last_seen
@@ -201,7 +213,7 @@ if __name__ == "__main__":
     b["events"].open_ring_buffer(h5g.spawn)
     h5g.reap(h5g.reap_timer, h5g.thread_stop_event)
     h5g.log.info("Running, and waiting for `connect()` events...")
-    h5g.log.info(f"socket path: {h5g.socket_dir}")
+    h5g.log.info(f"run path: {h5g.run_dir}")
     h5g.log.info(f"bin path: {h5g.bin_dir}")
     h5g.log.info(f"idle timeout: {h5g.idle_timeout}")
 
