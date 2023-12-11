@@ -84,9 +84,9 @@ class Spawner:
     def pidfile2username(self, path):
         """
         A helper method to validate if we got a valid pid path.
-        E.g.: u000000002-example.org-php.pid
+        E.g.: u000000002-example.org/php.pid
         """
-        m = re.search(r"(u[\d\w]{1,9})-(.+)-(php|ssh)\.pid$", path)
+        m = re.search(r"(u[\d\w]{1,9})-(.+)\/(php|ssh)\.pid$", path)
         if not m:
             self.log.error(f"can't parse pidfile path to username: {path}")
             return None
@@ -157,7 +157,7 @@ class Spawner:
         """
         self.log.debug("Checking idle user processes...")
         for f in os.listdir(self.run_dir):
-            pid_file = f"{self.run_dir}/{f}"
+            pid_file = f"{self.run_dir}/{f}/php.pid"
             try:
                 s = os.lstat(pid_file)
                 if not S_ISREG(s.st_mode):
@@ -169,8 +169,7 @@ class Spawner:
             if not username:
                 continue
 
-            sun_path = f"{self.run_dir}/{username}/{bundle}.socket"
-            print(sun_path)
+            sun_path = f"{self.run_dir}/{username}-{bundle}/php.socket"
 
             if (
                 sun_path in self.last_seen
