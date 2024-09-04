@@ -96,7 +96,7 @@ int HProxyCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 	if (strncmp(account, "default", strlen("default")))
 		RedisModule_SelectDb(ctx, crc32(account) % NUM_REDIS_DATABASES);
 
-	if (!strncmp(cmd, SCAN, strlen(SCAN))) {
+	if (!strncmp(cmd, SCAN, strlen(SCAN)) && argc > 1) {
 		unsigned long long arg1;
 
 		if (RedisModule_StringToULongLong(argv[1], &arg1) !=
