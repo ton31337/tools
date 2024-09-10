@@ -71,12 +71,14 @@ const char *cmd_proxy_get(const char *cmd)
 uint32_t crc32(const char *key)
 {
 	uint32_t crc = 0xffffffff;
+
 	for (int i = 0; key[i] != '\0'; ++i) {
 		crc ^= (uint8_t)key[i];
 		for (int j = 0; j < 8; ++j) {
 			crc = (crc >> 1) ^ (0xEDB88320 & (-(crc & 1)));
 		}
 	}
+
 	return ~crc;
 }
 
